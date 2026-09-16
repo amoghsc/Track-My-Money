@@ -4,6 +4,7 @@ import { Doughnut, Bar, Line } from 'react-chartjs-2'
 import { eachDayOfInterval, eachMonthOfInterval, format, differenceInDays } from 'date-fns'
 import { useStore } from '../lib/store'
 import { inPeriod, toISODate, type Period, shiftPeriod } from '../lib/periods'
+import { useSwipe } from '../lib/useSwipe'
 import { money, pct } from '../lib/format'
 import { PeriodNav } from '../components/PeriodNav'
 import type { Entry, EntryType } from '../lib/types'
@@ -37,6 +38,7 @@ export function ChartsView({ period, setPeriod, onPickCategory }: Props) {
   const { entries, catMap, settings } = useStore()
   const muted = useCss('--muted'), line = useCss('--line'), expC = useCss('--expense'), incC = useCss('--income'), accent = useCss('--accent'), textC = useCss('--text')
 
+  const swipe = useSwipe(() => setPeriod(shiftPeriod(period, 1, settings.fyStartMonth)), () => setPeriod(shiftPeriod(period, -1, settings.fyStartMonth)))
   const inRange = useMemo(() => entries.filter(e => inPeriod(e.date, period)), [entries, period])
   const prev = useMemo(() => shiftPeriod(period, -1, settings.fyStartMonth), [period, settings.fyStartMonth])
   const inPrev = useMemo(() => entries.filter(e => inPeriod(e.date, prev)), [entries, prev])
@@ -94,8 +96,7 @@ export function ChartsView({ period, setPeriod, onPickCategory }: Props) {
             {rows.map(r => (
               <button key={r.id} onClick={() => onPickCategory(r.id, type)}>
                 <CategoryIcon category={r.cat} size={30} />
-                <span style={{ minWidth: 110, fontSize: 13 }}>{r.cat?.name ?? 'Uncategorised'}</span>
-                <span className="bar"><i style={{ width: pct(r.amt, total), background: r.cat?.color ?? '#9ca3af' }} /></span>
+                <span className="nm">{r.cat?.name ?? 'Uncategorised'}</span>
                 <span className="a">{money(r.amt)}</span>
                 <span className="p">{pct(r.amt, total)}</span>
               </button>
@@ -109,7 +110,7 @@ export function ChartsView({ period, setPeriod, onPickCategory }: Props) {
   const axis = { grid: { color: line }, ticks: { color: muted, font: { size: 11 } } }
 
   return (
-    <>
+    <div className="view" {...swipe}>
       <div className="topbar"><PeriodNav period={period} onChange={setPeriod} /></div>
       <div className="content">
         <div className="chart-card">
@@ -143,6 +144,6 @@ export function ChartsView({ period, setPeriod, onPickCategory }: Props) {
           </div>
         )}
       </div>
-    </>
+    </div>
   )
 }

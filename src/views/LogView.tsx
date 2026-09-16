@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useStore } from '../lib/store'
-import { inPeriod, dayLabel, monthKey, monthLabel, type Period } from '../lib/periods'
+import { inPeriod, dayLabel, monthKey, monthLabel, shiftPeriod, type Period } from '../lib/periods'
+import { useSwipe } from '../lib/useSwipe'
 import { money } from '../lib/format'
 import { PeriodNav } from '../components/PeriodNav'
 import { EntryForm } from '../components/EntryForm'
@@ -16,11 +17,14 @@ export const EMPTY_FILTERS: Filters = { type: 'all', categoryId: null, tagId: nu
 interface Props { period: Period; setPeriod: (p: Period) => void; filters: Filters; setFilters: (f: Filters) => void }
 
 export function LogView({ period, setPeriod, filters, setFilters }: Props) {
-  const { entries, categories, tags, catMap, tagMap, loading, error, refresh } = useStore()
+  const { entries, categories, tags, catMap, tagMap, loading, error, refresh, settings } = useStore()
+  const swipe = useSwipe(() => setPeriod(shiftPeriod(period, 1, settings.fyStartMonth)), () => setPeriod(shiftPeriod(period, -1, settings.fyStartMonth)))
   const [editing, setEditing] = useState<Entry | null | 'new'>(null)
   const [showFilters, setShowFilters] = useState(false)
 
-  const inRange = useMemo(() => entries.filter(e => inPeriod(e.date, period)), [entries, period])
+  const searching = filters.q.trim().length > 0
+  // a search looks across all entries, not just the selected period
+  const inRange = useMemo(() => (searching ? entries : entries.filter(e => inPeriod(e.date, period))), [entries, period, searching])
   const visible = useMemo(() => {
     const q = filters.q.trim().toLowerCase()
     return inRange.filter(e =>
@@ -41,13 +45,13 @@ export function LogView({ period, setPeriod, filters, setFilters }: Props) {
   const groups = useMemo(() => {
     const months = new Map<string, Map<string, Entry[]>>()
     for (const e of visible) {
-      const mk = period.kind === 'year' || period.kind === 'fy' ? monthKey(e.date) : 'all'
+      const mk = searching || period.kind === 'year' || period.kind === 'fy' ? monthKey(e.date) : 'all'
       const m = months.get(mk) ?? new Map<string, Entry[]>()
       months.set(mk, m)
       m.set(e.date, [...(m.get(e.date) ?? []), e])
     }
     return months
-  }, [visible, period.kind])
+  }, [visible, period.kind, searching])
 
   const dayTotals = (list: Entry[]) => {
     let inc = 0, exp = 0
@@ -63,7 +67,7 @@ export function LogView({ period, setPeriod, filters, setFilters }: Props) {
   }
 
   return (
-    <>
+    <div className="view" {...swipe}>
       <div className="topbar">
         <PeriodNav period={period} onChange={setPeriod} />
         <div className="summary">
@@ -72,7 +76,7 @@ export function LogView({ period, setPeriod, filters, setFilters }: Props) {
           <div className="cell"><div className="k">Net</div><div className="v" style={{ color: totals.net < 0 ? 'var(--expense)' : 'var(--income)' }}>{money(totals.net, { sign: totals.net < 0 ? '-' : '' })}</div></div>
         </div>
         <div className="toolbar">
-          <input placeholder="Search" value={filters.q} onChange={e => setFilters({ ...filters, q: e.target.value })} />
+          <input type="search" placeholder="Search all entries" value={filters.q} onChange={e => setFilters({ ...filters, q: e.target.value })} />
           <button className={`iconbtn ${filtersActive ? 'active' : ''}`} onClick={() => setShowFilters(s => !s)} aria-label="Filters"><FilterIcon /></button>
           <button className="iconbtn" onClick={exportCsv} aria-label="Download CSV" disabled={!visible.length}><DownloadIcon /></button>
         </div>
@@ -96,8 +100,9 @@ export function LogView({ period, setPeriod, filters, setFilters }: Props) {
 
       <div className="content">
         {error && <div className="err">{error} <button className="link" onClick={refresh}>Retry</button></div>}
+        {searching && <div className="note" style={{ margin: '4px 4px 0' }}>{visible.length} result{visible.length === 1 ? '' : 's'} for "{filters.q.trim()}" across all entries</div>}
         {visible.length === 0 && (
-          <div className="empty">{loading ? 'Loading…' : 'Nothing here yet.'}</div>
+          <div className="empty">{loading ? 'Loading…' : searching ? 'No matches.' : 'Nothing here yet.'}</div>
         )}
         {[...groups.entries()].map(([mk, days]) => {
           const mt = dayTotals([...days.values()].flat())
@@ -157,6 +162,6 @@ export function LogView({ period, setPeriod, filters, setFilters }: Props) {
           onClose={() => setEditing(null)}
         />
       )}
-    </>
+    </div>
   )
 }

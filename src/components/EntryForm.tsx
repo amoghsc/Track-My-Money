@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Sheet } from './Sheet'
 import { useStore } from '../lib/store'
 import type { Entry, EntryType } from '../lib/types'
@@ -30,7 +30,8 @@ export function EntryForm({ entry, defaultDate, onClose }: Props) {
   const amountRef = useRef<HTMLInputElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
-  useEffect(() => { if (!entry) setTimeout(() => amountRef.current?.focus(), 150) }, [entry])
+  // focus inside the tap that opened the sheet, otherwise iOS won't show the keypad
+  useLayoutEffect(() => { if (!entry) amountRef.current?.focus() }, [entry])
   useEffect(() => () => { if (photoPreview) URL.revokeObjectURL(photoPreview) }, [photoPreview])
 
   const cats = categories.filter(c => c.type === type)
@@ -79,7 +80,7 @@ export function EntryForm({ entry, defaultDate, onClose }: Props) {
         <button className={`inc ${type === 'income' ? 'active' : ''}`} onClick={() => switchType('income')}>Income</button>
       </div>
       <div className="field">
-        <input ref={amountRef} className="amount-input" inputMode="decimal" placeholder="₹0" value={amount}
+        <input ref={amountRef} className="amount-input" inputMode="decimal" autoFocus={!entry} placeholder="₹0" value={amount}
           onChange={e => setAmount(e.target.value.replace(/[^\d.]/g, ''))} />
       </div>
       <div className="field">
@@ -99,7 +100,7 @@ export function EntryForm({ entry, defaultDate, onClose }: Props) {
         <div className="cat-grid">
           {cats.map(c => (
             <button key={c.id} type="button" className={`cat-cell ${c.id === categoryId ? 'active' : ''}`} onClick={() => setCategoryId(c.id)}>
-              <CategoryIcon category={c} size={42} />
+              <CategoryIcon category={c} size={46} />
               <span className="n">{c.name}</span>
             </button>
           ))}
