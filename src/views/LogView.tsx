@@ -7,6 +7,7 @@ import { EntryForm } from '../components/EntryForm'
 import { DownloadIcon, FilterIcon, PhotoIcon } from '../components/Icons'
 import { entriesToCsv, shareOrDownload } from '../lib/csv'
 import type { Entry, EntryType } from '../lib/types'
+import { CategoryIcon } from '../components/CategoryIcon'
 
 export interface Filters { type: EntryType | 'all'; categoryId: string | null; tagId: string | null; q: string }
 export const EMPTY_FILTERS: Filters = { type: 'all', categoryId: null, tagId: null, q: '' }
@@ -84,7 +85,7 @@ export function LogView({ period, setPeriod, filters, setFilters }: Props) {
             </div>
             <div className="chips">
               {categories.filter(c => filters.type === 'all' || c.type === filters.type).map(c => (
-                <button key={c.id} className={`chip ${filters.categoryId === c.id ? 'active' : ''}`} onClick={() => setFilters({ ...filters, categoryId: filters.categoryId === c.id ? null : c.id })}>{c.emoji} {c.name}</button>
+                <button key={c.id} className={`chip ${filters.categoryId === c.id ? 'active' : ''}`} onClick={() => setFilters({ ...filters, categoryId: filters.categoryId === c.id ? null : c.id })}><CategoryIcon category={c} size={18} /> {c.name}</button>
               ))}
             </div>
             {tags.length > 0 && (
@@ -131,7 +132,7 @@ export function LogView({ period, setPeriod, filters, setFilters }: Props) {
                       const c = catMap.get(e.category_id ?? '')
                       return (
                         <button className="row" key={e.id} onClick={() => setEditing(e)}>
-                          <span className="emoji-badge" style={{ background: (c?.color ?? '#9ca3af') + '33' }}>{c?.emoji ?? '❓'}</span>
+                          <CategoryIcon category={c} />
                           <span className="main">
                             <div className="title">{e.note || c?.name || 'Uncategorised'}</div>
                             <div className="sub">

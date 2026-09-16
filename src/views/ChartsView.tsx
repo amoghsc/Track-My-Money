@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { Chart as ChartJS, ArcElement, BarElement, CategoryScale, LinearScale, LineElement, PointElement, Tooltip, Filler } from 'chart.js'
+import { Chart as ChartJS, ArcElement, BarElement, CategoryScale, LinearScale, LineElement, PointElement, Tooltip, Filler, type Plugin } from 'chart.js'
 import { Doughnut, Bar, Line } from 'react-chartjs-2'
 import { eachDayOfInterval, eachMonthOfInterval, format, differenceInDays } from 'date-fns'
 import { useStore } from '../lib/store'
@@ -7,8 +7,25 @@ import { inPeriod, toISODate, type Period, shiftPeriod } from '../lib/periods'
 import { money, pct } from '../lib/format'
 import { PeriodNav } from '../components/PeriodNav'
 import type { Entry, EntryType } from '../lib/types'
+import { CategoryIcon } from '../components/CategoryIcon'
 
 ChartJS.register(ArcElement, BarElement, CategoryScale, LinearScale, LineElement, PointElement, Tooltip, Filler)
+
+/** Draws a small label + total in the donut hole (matches the Figma card). */
+const centreText: Plugin<'doughnut', { label: string; value: string; color: string; muted: string }> = {
+  id: 'centreText',
+  afterDraw(chart, _args, opts) {
+    const { ctx, chartArea } = chart
+    const x = (chartArea.left + chartArea.right) / 2, y = (chartArea.top + chartArea.bottom) / 2
+    ctx.save()
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
+    ctx.fillStyle = opts.muted; ctx.font = '500 10px -apple-system, BlinkMacSystemFont, Inter, sans-serif'
+    ctx.fillText(opts.label.toUpperCase(), x, y - 11)
+    ctx.fillStyle = opts.color; ctx.font = '700 18px -apple-system, BlinkMacSystemFont, Inter, sans-serif'
+    ctx.fillText(opts.value, x, y + 8)
+    ctx.restore()
+  },
+}
 
 interface Props { period: Period; setPeriod: (p: Period) => void; onPickCategory: (id: string, type: EntryType) => void }
 
@@ -18,7 +35,7 @@ function useCss(name: string) {
 
 export function ChartsView({ period, setPeriod, onPickCategory }: Props) {
   const { entries, catMap, settings } = useStore()
-  const muted = useCss('--muted'), line = useCss('--line'), expC = useCss('--expense'), incC = useCss('--income'), accent = useCss('--accent')
+  const muted = useCss('--muted'), line = useCss('--line'), expC = useCss('--expense'), incC = useCss('--income'), accent = useCss('--accent'), textC = useCss('--text')
 
   const inRange = useMemo(() => entries.filter(e => inPeriod(e.date, period)), [entries, period])
   const prev = useMemo(() => shiftPeriod(period, -1, settings.fyStartMonth), [period, settings.fyStartMonth])
@@ -66,16 +83,17 @@ export function ChartsView({ period, setPeriod, onPickCategory }: Props) {
     <>
       {rows.length === 0 ? <div className="empty" style={{ padding: 24 }}>No {type}s</div> : (
         <>
-          <div style={{ maxWidth: 220, margin: '0 auto' }}>
+          <div style={{ width: 200, height: 200, margin: '0 auto' }}>
             <Doughnut
-              data={{ labels: rows.map(r => r.cat?.name ?? '—'), datasets: [{ data: rows.map(r => r.amt), backgroundColor: rows.map(r => r.cat?.color ?? '#9ca3af'), borderWidth: 0 }] }}
-              options={{ cutout: '68%', plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ` ${money(c.parsed)} (${pct(c.parsed, total)})` } } }, onClick: (_, els) => { if (els[0]) onPickCategory(rows[els[0].index].id, type) } }}
+              data={{ labels: rows.map(r => r.cat?.name ?? '—'), datasets: [{ data: rows.map(r => r.amt), backgroundColor: rows.map(r => r.cat?.color ?? '#9ca3af'), borderWidth: 0, spacing: rows.length > 1 ? 3 : 0, borderRadius: rows.length > 1 ? 5 : 0, hoverOffset: 4 }] }}
+              plugins={[centreText]}
+              options={{ cutout: '64%', rotation: 0, plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ` ${money(c.parsed)} (${pct(c.parsed, total)})` } }, centreText: { label: period.kind === 'month' ? period.label.split(' ')[0] : period.label, value: money(total), color: textC, muted } }, onClick: (_, els) => { if (els[0]) onPickCategory(rows[els[0].index].id, type) } }}
             />
           </div>
           <div className="legend">
             {rows.map(r => (
               <button key={r.id} onClick={() => onPickCategory(r.id, type)}>
-                <span className="emoji-badge" style={{ width: 30, height: 30, fontSize: 15, background: (r.cat?.color ?? '#9ca3af') + '33' }}>{r.cat?.emoji ?? '❓'}</span>
+                <CategoryIcon category={r.cat} size={30} />
                 <span style={{ minWidth: 110, fontSize: 13 }}>{r.cat?.name ?? 'Uncategorised'}</span>
                 <span className="bar"><i style={{ width: pct(r.amt, total), background: r.cat?.color ?? '#9ca3af' }} /></span>
                 <span className="a">{money(r.amt)}</span>
@@ -102,8 +120,8 @@ export function ChartsView({ period, setPeriod, onPickCategory }: Props) {
           <h3>Income vs expenses</h3>
           <Bar
             data={{ labels: buckets.labels, datasets: [
-              { label: 'Expenses', data: buckets.exp, backgroundColor: expC, borderRadius: 4 },
-              { label: 'Income', data: buckets.inc, backgroundColor: incC, borderRadius: 4 },
+              { label: 'Expenses', data: buckets.exp, backgroundColor: expC, borderRadius: 3, borderSkipped: false, maxBarThickness: 9 },
+              { label: 'Income', data: buckets.inc, backgroundColor: incC, borderRadius: 3, borderSkipped: false, maxBarThickness: 9 },
             ] }}
             options={{ responsive: true, plugins: { tooltip: { callbacks: { label: c => ` ${c.dataset.label}: ${money(c.parsed.y ?? 0)}` } } }, scales: { x: { ...axis, grid: { display: false } }, y: { ...axis, ticks: { ...axis.ticks, callback: v => money(Number(v)) } } } }}
           />

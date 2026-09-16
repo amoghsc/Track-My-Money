@@ -7,6 +7,7 @@ import { compressImage } from '../lib/image'
 import { CameraIcon } from './Icons'
 import { PhotoThumb } from './PhotoThumb'
 import { COLOR_CHOICES } from '../lib/emoji'
+import { CategoryIcon } from './CategoryIcon'
 
 interface Props {
   entry?: Entry | null
@@ -98,7 +99,7 @@ export function EntryForm({ entry, defaultDate, onClose }: Props) {
         <div className="cat-grid">
           {cats.map(c => (
             <button key={c.id} type="button" className={`cat-cell ${c.id === categoryId ? 'active' : ''}`} onClick={() => setCategoryId(c.id)}>
-              <span className="emoji-badge" style={{ background: c.color + '33' }}>{c.emoji}</span>
+              <CategoryIcon category={c} size={42} />
               <span className="n">{c.name}</span>
             </button>
           ))}

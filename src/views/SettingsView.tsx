@@ -2,7 +2,9 @@ import { useRef, useState } from 'react'
 import { useStore } from '../lib/store'
 import type { Category, EntryType, Tag } from '../lib/types'
 import { Sheet } from '../components/Sheet'
-import { ColorPicker, EmojiPicker } from '../components/Pickers'
+import { ColorPicker, IconPicker } from '../components/Pickers'
+import { CategoryIcon } from '../components/CategoryIcon'
+import { DEFAULT_ICON } from '../lib/icons'
 import { COLOR_CHOICES } from '../lib/emoji'
 
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December']
@@ -62,11 +64,11 @@ export function SettingsView() {
               <button className={catType === 'expense' ? 'active' : ''} onClick={() => setCatType('expense')}>Expense</button>
               <button className={catType === 'income' ? 'active' : ''} onClick={() => setCatType('income')}>Income</button>
             </div>
-            <button className="btn sm" onClick={() => setEditCat({ type: catType, emoji: '📦', color: COLOR_CHOICES[categories.length % COLOR_CHOICES.length] })}>+ New</button>
+            <button className="btn sm" onClick={() => setEditCat({ type: catType, emoji: '📦', icon: DEFAULT_ICON, color: COLOR_CHOICES[categories.length % COLOR_CHOICES.length] })}>+ New</button>
           </div>
           {cats.map((c, i) => (
             <div className="srow" key={c.id}>
-              <button className="emoji-badge" style={{ background: c.color + '33' }} onClick={() => setEditCat(c)}>{c.emoji}</button>
+              <button onClick={() => setEditCat(c)}><CategoryIcon category={c} /></button>
               <button className="grow" style={{ textAlign: 'left' }} onClick={() => setEditCat(c)}>
                 <div>{c.name}</div><div className="small">{usage(c.id)} entries</div>
               </button>
@@ -131,7 +133,7 @@ export function SettingsView() {
           <div className="field">
             <select value={reassign} onChange={e => setReassign(e.target.value)}>
               <option value="">— Leave uncategorised —</option>
-              {cats.filter(x => x.id !== deleting.id).map(x => <option key={x.id} value={x.id}>{x.emoji} {x.name}</option>)}
+              {cats.filter(x => x.id !== deleting.id).map(x => <option key={x.id} value={x.id}>{x.name}</option>)}
             </select>
           </div>
           <div className="btn-row">
@@ -146,18 +148,18 @@ export function SettingsView() {
 
 function CategorySheet({ draft, onClose, onSave }: { draft: Partial<Category>; onClose: () => void; onSave: (c: Omit<Category, 'id' | 'sort_order'> & { id?: string; sort_order?: number }) => void }) {
   const [name, setName] = useState(draft.name ?? '')
-  const [emoji, setEmoji] = useState(draft.emoji ?? '📦')
+  const [icon, setIcon] = useState<string | null>(draft.icon ?? DEFAULT_ICON)
   const [color, setColor] = useState(draft.color ?? COLOR_CHOICES[0])
   return (
     <Sheet onClose={onClose}>
       <h2>{draft.id ? 'Edit category' : 'New category'}</h2>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
-        <span className="emoji-badge" style={{ width: 56, height: 56, fontSize: 28, background: color + '33' }}>{emoji}</span>
+        <CategoryIcon category={{ icon, emoji: draft.emoji ?? '📦', color }} size={56} />
         <input placeholder="Category name" value={name} onChange={e => setName(e.target.value)} autoFocus={!draft.id} />
       </div>
-      <div className="field"><label>Icon</label><EmojiPicker value={emoji} onChange={setEmoji} /></div>
+      <div className="field"><label>Icon</label><IconPicker value={icon} color={color} onChange={setIcon} /></div>
       <div className="field"><label>Colour</label><ColorPicker value={color} onChange={setColor} /></div>
-      <button className="btn" disabled={!name.trim()} onClick={() => onSave({ id: draft.id, name: name.trim(), type: draft.type!, emoji, color, sort_order: draft.sort_order })}>Save</button>
+      <button className="btn" disabled={!name.trim()} onClick={() => onSave({ id: draft.id, name: name.trim(), type: draft.type!, emoji: draft.emoji ?? '📦', icon, color, sort_order: draft.sort_order })}>Save</button>
     </Sheet>
   )
 }

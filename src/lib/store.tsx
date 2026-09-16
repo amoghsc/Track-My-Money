@@ -33,7 +33,8 @@ interface Store {
   signOut: () => Promise<void>
 }
 
-const Ctx = createContext<Store | null>(null)
+export const StoreContext = createContext<Store | null>(null)
+const Ctx = StoreContext
 export const useStore = () => {
   const s = useContext(Ctx)
   if (!s) throw new Error('useStore outside provider')

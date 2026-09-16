@@ -5,6 +5,7 @@ export interface Category {
   name: string
   type: EntryType
   emoji: string
+  icon: string | null // Lucide icon name; emoji is the fallback
   color: string
   sort_order: number
 }
