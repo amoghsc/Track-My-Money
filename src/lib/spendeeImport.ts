@@ -68,6 +68,17 @@ export function detectColumns(header: string[]) {
   return cols
 }
 
+/** Spendee category names → the names used in this app (typos, spacing, our existing seeds). */
+const CATEGORY_ALIASES: Record<string, string> = {
+  backery: 'Bakery', excercise: 'Exercise', 'bills n fees': 'Bills & Fees', refund: 'Refunds',
+  'maintenance & repairs': 'Maintenance & Repairs', 'property expenses': 'Property Expenses', 'deposit repayment': 'Deposit Repayment',
+  'deposit received': 'Deposit Received',
+}
+export function cleanCategory(raw: string) {
+  const n = raw.trim().replace(/\s+/g, ' ')
+  return CATEGORY_ALIASES[n.toLowerCase()] ?? n
+}
+
 function parseDate(raw: string): string | null {
   const s = raw.trim()
   if (!s) return null
@@ -110,7 +121,10 @@ export function normaliseRows(table: string[][]): { rows: ImportRow[]; skipped: 
     else if (columns.type === undefined) type = amt < 0 ? 'income' : 'expense'
     else type = amt < 0 ? 'expense' : 'income'
     const tags = get(r, 'labels').split(/[;,|]/).map(t => t.trim().replace(/^#/, '')).filter(Boolean)
-    rows.push({ date, type, amount: Math.abs(amt), category: get(r, 'category'), note: get(r, 'note'), tags, author: get(r, 'author') })
+    // Spendee also writes labels into the note as #hashtags — drop those that are already tags
+    const tagSet = new Set(tags.map(t => t.toLowerCase()))
+    const note = get(r, 'note').split(/\s+/).filter(w => !(w.startsWith('#') && tagSet.has(w.slice(1).toLowerCase()))).join(' ').trim()
+    rows.push({ date, type, amount: Math.abs(amt), category: cleanCategory(get(r, 'category')), note, tags, author: get(r, 'author') })
   })
   return { rows, skipped, columns }
 }

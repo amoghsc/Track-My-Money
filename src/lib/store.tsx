@@ -291,13 +291,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       newTags.push(t); tagIds.set(name.toLowerCase(), t.id)
     }
     if (newTags.length) { const { error } = await supabase.from('xp_tags').insert(newTags); if (error) throw error }
-    // 3. entries
+    // 3. entries — Spendee authors like "Amogh C" map to our member names
+    const { data: members } = await supabase.from('xp_members').select('display_name')
+    const names = (members ?? []).map(m => m.display_name as string)
+    const authorFor = (a: string) => names.find(n => a.toLowerCase().startsWith(n.toLowerCase())) ?? a
     const existing = new Set(entries.map(dupKey))
     const toInsert = rows.filter(r => !(skipDuplicates && existing.has(dupKey(r)))).map(r => ({
       id: crypto.randomUUID(), type: r.type, date: r.date, amount: r.amount,
       category_id: r.category ? (catIds.get(catKey(r.category, r.type)) ?? fallback(r.type)) : fallback(r.type),
       note: r.note, tag_ids: r.tags.map(t => tagIds.get(t.toLowerCase())!).filter(Boolean), photo_path: null,
-      author: r.author || member?.display_name || 'Spendee',
+      author: r.author ? authorFor(r.author) : (member?.display_name || 'Spendee'),
     }))
     for (let i = 0; i < toInsert.length; i += 200) {
       const { error } = await supabase.from('xp_entries').insert(toInsert.slice(i, i + 200))

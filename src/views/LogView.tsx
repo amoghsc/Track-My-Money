@@ -20,15 +20,23 @@ export function LogView({ period, setPeriod, filters, setFilters }: Props) {
   const [showFilters, setShowFilters] = useState(false)
 
   const inRange = useMemo(() => entries.filter(e => inPeriod(e.date, period)), [entries, period])
+  // with a big Spendee import there can be >1000 tags; show the ones used in this period, most used first
+  const topTags = useMemo(() => {
+    const n = new Map<string, number>()
+    for (const e of inRange) for (const t of e.tag_ids) n.set(t, (n.get(t) ?? 0) + 1)
+    const list = [...n.entries()].sort((a, b) => b[1] - a[1]).map(([id]) => tagMap.get(id)).filter(Boolean).slice(0, 20) as typeof tags
+    if (filters.tagId && !list.some(t => t.id === filters.tagId)) { const t = tagMap.get(filters.tagId); if (t) list.unshift(t) }
+    return list
+  }, [inRange, tagMap, tags, filters.tagId])
   const visible = useMemo(() => {
     const q = filters.q.trim().toLowerCase()
     return inRange.filter(e =>
       (filters.type === 'all' || e.type === filters.type) &&
       (!filters.categoryId || e.category_id === filters.categoryId) &&
       (!filters.tagId || e.tag_ids.includes(filters.tagId)) &&
-      (!q || e.note.toLowerCase().includes(q) || (catMap.get(e.category_id ?? '')?.name.toLowerCase().includes(q) ?? false)),
+      (!q || e.note.toLowerCase().includes(q) || (catMap.get(e.category_id ?? '')?.name.toLowerCase().includes(q) ?? false) || e.tag_ids.some(id => tagMap.get(id)?.name.toLowerCase().includes(q))),
     )
-  }, [inRange, filters, catMap])
+  }, [inRange, filters, catMap, tagMap])
 
   const totals = useMemo(() => {
     let inc = 0, exp = 0
@@ -88,9 +96,9 @@ export function LogView({ period, setPeriod, filters, setFilters }: Props) {
                 <button key={c.id} className={`chip ${filters.categoryId === c.id ? 'active' : ''}`} onClick={() => setFilters({ ...filters, categoryId: filters.categoryId === c.id ? null : c.id })}><CategoryIcon category={c} size={18} /> {c.name}</button>
               ))}
             </div>
-            {tags.length > 0 && (
+            {topTags.length > 0 && (
               <div className="chips">
-                {tags.map(t => (
+                {topTags.map(t => (
                   <button key={t.id} className={`chip ${filters.tagId === t.id ? 'active' : ''}`} onClick={() => setFilters({ ...filters, tagId: filters.tagId === t.id ? null : t.id })}><span className="dot" style={{ background: t.color }} />{t.name}</button>
                 ))}
               </div>

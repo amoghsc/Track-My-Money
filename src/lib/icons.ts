@@ -6,7 +6,8 @@ import {
   Music, Mic, Tv, Ticket, Dice5, Book, GraduationCap, School, Pill, Stethoscope, Activity, Dog, Cat, PawPrint, HeartHandshake,
   HandHeart, Flower2, PartyPopper, Cake, Laptop, Printer, Armchair, Banknote, PiggyBank, ChartLine, Trophy, CircleHelp, Star, Target,
   BusFront, Truck, MapPin, Globe, Umbrella, Tent, Hotel, UtensilsCrossed, Wine, Soup, IceCreamCone, Salad, Sandwich, Cookie, Candy,
-  Cigarette, Scissors, Brush, SprayCan, Leaf, Sun, Moon, CloudRain, type LucideIcon,
+  Cigarette, Scissors, Brush, SprayCan, Leaf, Sun, Moon, CloudRain, Camera, Pencil, Newspaper, ShieldCheck, KeyRound, Percent, Croissant,
+  HandCoins, Building, IndianRupee, HandHelping, type LucideIcon,
 } from 'lucide-react'
 
 /** Curated Lucide icons for categories, keyed by Lucide's kebab-case name (stored in xp_categories.icon). */
@@ -39,6 +40,9 @@ export const ICONS: Record<string, LucideIcon> = {
   briefcase: Briefcase, laptop: Laptop, printer: Printer, 'building-2': Building2, wallet: Wallet, banknote: Banknote, coins: Coins,
   'piggy-bank': PiggyBank, 'trending-up': TrendingUp, 'chart-line': ChartLine, 'undo-2': Undo2, plus: Plus, package: Package,
   star: Star, 'circle-help': CircleHelp, sun: Sun, moon: Moon, 'cloud-rain': CloudRain,
+  // added for the Spendee category set
+  camera: Camera, pencil: Pencil, newspaper: Newspaper, 'shield-check': ShieldCheck, 'key-round': KeyRound, percent: Percent,
+  croissant: Croissant, 'hand-coins': HandCoins, building: Building, 'indian-rupee': IndianRupee, 'hand-helping': HandHelping,
 }
 export const ICON_NAMES = Object.keys(ICONS)
 export const DEFAULT_ICON = 'package'
