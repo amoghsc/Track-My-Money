@@ -36,7 +36,7 @@ export function Login() {
 
   return (
     <form className="login" onSubmit={submit}>
-      <h1>Kharcha</h1>
+      <h1>Track My Money</h1>
       <p>Shared expense tracker</p>
       <div className="field"><label>Email</label><input type="email" autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} required /></div>
       <div className="field"><label>Password</label><input type="password" autoComplete={mode === 'in' ? 'current-password' : 'new-password'} value={password} onChange={e => setPassword(e.target.value)} required minLength={6} /></div>

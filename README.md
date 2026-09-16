@@ -1,4 +1,4 @@
-# Kharcha
+# Track My Money
 
 Shared expense & income tracker (Spendee-style PWA) for two people, backed by Supabase.
 

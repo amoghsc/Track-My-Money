@@ -10,8 +10,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['icon.svg', 'apple-touch-icon.png'],
       manifest: {
-        name: 'Kharcha',
-        short_name: 'Kharcha',
+        name: 'Track My Money',
+        short_name: 'Track My Money',
         description: 'Shared expense & income tracker',
         theme_color: '#0f172a',
         background_color: '#0f172a',

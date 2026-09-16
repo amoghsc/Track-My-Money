@@ -8,6 +8,7 @@ import { DownloadIcon, FilterIcon, PhotoIcon } from '../components/Icons'
 import { entriesToCsv, shareOrDownload } from '../lib/csv'
 import type { Entry, EntryType } from '../lib/types'
 import { CategoryIcon } from '../components/CategoryIcon'
+import { TagPicker } from '../components/TagPicker'
 
 export interface Filters { type: EntryType | 'all'; categoryId: string | null; tagId: string | null; q: string }
 export const EMPTY_FILTERS: Filters = { type: 'all', categoryId: null, tagId: null, q: '' }
@@ -20,14 +21,6 @@ export function LogView({ period, setPeriod, filters, setFilters }: Props) {
   const [showFilters, setShowFilters] = useState(false)
 
   const inRange = useMemo(() => entries.filter(e => inPeriod(e.date, period)), [entries, period])
-  // with a big Spendee import there can be >1000 tags; show the ones used in this period, most used first
-  const topTags = useMemo(() => {
-    const n = new Map<string, number>()
-    for (const e of inRange) for (const t of e.tag_ids) n.set(t, (n.get(t) ?? 0) + 1)
-    const list = [...n.entries()].sort((a, b) => b[1] - a[1]).map(([id]) => tagMap.get(id)).filter(Boolean).slice(0, 20) as typeof tags
-    if (filters.tagId && !list.some(t => t.id === filters.tagId)) { const t = tagMap.get(filters.tagId); if (t) list.unshift(t) }
-    return list
-  }, [inRange, tagMap, tags, filters.tagId])
   const visible = useMemo(() => {
     const q = filters.q.trim().toLowerCase()
     return inRange.filter(e =>
@@ -65,7 +58,7 @@ export function LogView({ period, setPeriod, filters, setFilters }: Props) {
   const filtersActive = filters.type !== 'all' || filters.categoryId || filters.tagId || filters.q
   const exportCsv = async () => {
     const includeIncome = visible.some(e => e.type === 'income') && confirm('Include income rows (as negative amounts)?\n\nOK = include, Cancel = expenses only')
-    const name = `spendee_${period.label.replace(/[^\w]+/g, '_').toLowerCase()}.csv`
+    const name = `track-my-money_${period.label.replace(/[^\w]+/g, '_').toLowerCase()}.csv`
     await shareOrDownload(name, entriesToCsv(visible, catMap, includeIncome))
   }
 
@@ -96,13 +89,7 @@ export function LogView({ period, setPeriod, filters, setFilters }: Props) {
                 <button key={c.id} className={`chip ${filters.categoryId === c.id ? 'active' : ''}`} onClick={() => setFilters({ ...filters, categoryId: filters.categoryId === c.id ? null : c.id })}><CategoryIcon category={c} size={18} /> {c.name}</button>
               ))}
             </div>
-            {topTags.length > 0 && (
-              <div className="chips">
-                {topTags.map(t => (
-                  <button key={t.id} className={`chip ${filters.tagId === t.id ? 'active' : ''}`} onClick={() => setFilters({ ...filters, tagId: filters.tagId === t.id ? null : t.id })}><span className="dot" style={{ background: t.color }} />{t.name}</button>
-                ))}
-              </div>
-            )}
+            {tags.length > 0 && <TagPicker single selected={filters.tagId ? [filters.tagId] : []} onChange={ids => setFilters({ ...filters, tagId: ids[0] ?? null })} />}
           </>
         )}
       </div>
@@ -147,7 +134,7 @@ export function LogView({ period, setPeriod, filters, setFilters }: Props) {
                               {e.note && c && <span>{c.name}</span>}
                               {e.author && <span>· {e.author}</span>}
                               {e.photo_path && <span className="photo-ic"><PhotoIcon /></span>}
-                              {e.tag_ids.map(id => tagMap.get(id)).filter(Boolean).map(t => <span key={t!.id} className="tagpill" style={{ background: t!.color }}>{t!.name}</span>)}
+                              {e.tag_ids.map(id => tagMap.get(id)).filter(Boolean).map(t => <span key={t!.id} className="tagpill" style={{ background: t!.color + '26', color: t!.color }}>{t!.name}</span>)}
                             </div>
                           </span>
                           <span className={`amt ${e.type === 'income' ? 'inc' : ''}`}>{e.type === 'income' ? '+' : '−'}{money(e.amount)}</span>

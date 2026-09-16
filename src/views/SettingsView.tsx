@@ -62,7 +62,7 @@ export function SettingsView() {
 
   const exportJson = () => {
     const blob = new Blob([JSON.stringify({ exported_at: new Date().toISOString(), categories, tags, entries }, null, 1)], { type: 'application/json' })
-    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `kharcha-backup-${new Date().toISOString().slice(0, 10)}.json`; a.click()
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `track-my-money-backup-${new Date().toISOString().slice(0, 10)}.json`; a.click()
   }
   const importJson = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0]; e.target.value = ''
@@ -104,7 +104,7 @@ export function SettingsView() {
           {tags.length === 0 && <div className="srow small">No tags yet. You can also create tags while adding an entry.</div>}
           {tags.map(t => (
             <div className="srow" key={t.id}>
-              <span className="dot" style={{ width: 14, height: 14, borderRadius: 7, background: t.color, display: 'inline-block' }} />
+              <span className="dot" style={{ width: 14, height: 14, borderRadius: 7, background: t.color + '99', display: 'inline-block' }} />
               <button className="grow" style={{ textAlign: 'left' }} onClick={() => setEditTag(t)}>
                 <div>{t.name}</div><div className="small">{entries.filter(e => e.tag_ids.includes(t.id)).length} entries</div>
               </button>

@@ -6,8 +6,8 @@ import { today } from '../lib/periods'
 import { compressImage } from '../lib/image'
 import { CameraIcon } from './Icons'
 import { PhotoThumb } from './PhotoThumb'
-import { COLOR_CHOICES } from '../lib/emoji'
 import { CategoryIcon } from './CategoryIcon'
+import { TagPicker } from './TagPicker'
 
 interface Props {
   entry?: Entry | null
@@ -16,7 +16,7 @@ interface Props {
 }
 
 export function EntryForm({ entry, defaultDate, onClose }: Props) {
-  const { categories, tags, addEntry, updateEntry, deleteEntry, saveTag } = useStore()
+  const { categories, addEntry, updateEntry, deleteEntry } = useStore()
   const [type, setType] = useState<EntryType>(entry?.type ?? 'expense')
   const [amount, setAmount] = useState(entry ? String(entry.amount) : '')
   const [date, setDate] = useState(entry?.date ?? defaultDate ?? today())
@@ -25,7 +25,6 @@ export function EntryForm({ entry, defaultDate, onClose }: Props) {
   const [tagIds, setTagIds] = useState<string[]>(entry?.tag_ids ?? [])
   const [photo, setPhoto] = useState<Blob | null | undefined>(undefined) // undefined = unchanged, null = removed
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
-  const [newTag, setNewTag] = useState('')
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState<string | null>(null)
   const amountRef = useRef<HTMLInputElement>(null)
@@ -49,17 +48,6 @@ export function EntryForm({ entry, defaultDate, onClose }: Props) {
       setPhotoPreview(URL.createObjectURL(blob))
     } catch { setErr('Could not read that photo') }
     e.target.value = ''
-  }
-
-  const addTagInline = async () => {
-    const name = newTag.trim()
-    if (!name) return
-    const existing = tags.find(t => t.name.toLowerCase() === name.toLowerCase())
-    if (existing) { setTagIds(ids => ids.includes(existing.id) ? ids : [...ids, existing.id]); setNewTag(''); return }
-    const id = crypto.randomUUID()
-    await saveTag({ id, name, color: COLOR_CHOICES[tags.length % COLOR_CHOICES.length] })
-    setTagIds(ids => [...ids, id])
-    setNewTag('')
   }
 
   const save = async () => {
@@ -104,18 +92,7 @@ export function EntryForm({ entry, defaultDate, onClose }: Props) {
       </div>
       <div className="field">
         <label>Tags</label>
-        <div className="chips" style={{ flexWrap: 'wrap' }}>
-          {tags.map(t => (
-            <button key={t.id} type="button" className={`chip ${tagIds.includes(t.id) ? 'active' : ''}`}
-              onClick={() => setTagIds(ids => ids.includes(t.id) ? ids.filter(x => x !== t.id) : [...ids, t.id])}>
-              <span className="dot" style={{ background: t.color }} />{t.name}
-            </button>
-          ))}
-        </div>
-        <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
-          <input placeholder="New tag" value={newTag} onChange={e => setNewTag(e.target.value)} onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addTagInline())} />
-          <button type="button" className="btn secondary sm" onClick={addTagInline} disabled={!newTag.trim()}>Add</button>
-        </div>
+        <TagPicker selected={tagIds} onChange={setTagIds} />
       </div>
       <div className="field">
         <label>Category</label>

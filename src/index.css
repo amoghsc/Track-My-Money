@@ -109,7 +109,9 @@ input[type="date"] { min-height: 42px; -webkit-appearance: none; appearance: non
 .row .title { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .row .sub { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; display: flex; gap: 6px; align-items: center; }
 .row .amt { font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.tagpill { display: inline-block; padding: 0 6px; border-radius: 6px; font-size: 11px; line-height: 16px; color: #fff; }
+.tagpill { display: inline-block; padding: 0 6px; border-radius: 6px; font-size: 11px; line-height: 16px; font-weight: 500; }
+.chip.tag { border-color: transparent; font-weight: 500; }
+.tagpicker input { margin-top: 6px; }
 .photo-ic { opacity: .6; }
 .empty { text-align: center; color: var(--muted); padding: 48px 16px; }
 

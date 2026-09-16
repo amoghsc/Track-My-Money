@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { Chart as ChartJS, ArcElement, BarElement, CategoryScale, LinearScale, LineElement, PointElement, Tooltip, Filler, type Plugin } from 'chart.js'
+import { Chart as ChartJS, ArcElement, BarElement, CategoryScale, LinearScale, LineElement, PointElement, Tooltip, Filler, Legend, type Plugin } from 'chart.js'
 import { Doughnut, Bar, Line } from 'react-chartjs-2'
 import { eachDayOfInterval, eachMonthOfInterval, format, differenceInDays } from 'date-fns'
 import { useStore } from '../lib/store'
@@ -9,7 +9,7 @@ import { PeriodNav } from '../components/PeriodNav'
 import type { Entry, EntryType } from '../lib/types'
 import { CategoryIcon } from '../components/CategoryIcon'
 
-ChartJS.register(ArcElement, BarElement, CategoryScale, LinearScale, LineElement, PointElement, Tooltip, Filler)
+ChartJS.register(ArcElement, BarElement, CategoryScale, LinearScale, LineElement, PointElement, Tooltip, Filler, Legend)
 
 /** Draws a small label + total in the donut hole (matches the Figma card). */
 const centreText: Plugin<'doughnut', { label: string; value: string; color: string; muted: string }> = {
@@ -72,7 +72,7 @@ export function ChartsView({ period, setPeriod, onPickCategory }: Props) {
     const n = differenceInDays(period.end, period.start) + 1
     const build = (list: Entry[], start: Date) => {
       const arr = Array(n).fill(0)
-      for (const e of list) if (e.type === 'expense') { const i = differenceInDays(new Date(e.date), start); if (i >= 0 && i < n) arr[i] += e.amount }
+      for (const e of list) { const i = differenceInDays(new Date(e.date), start); if (i >= 0 && i < n) arr[i] += e.type === 'income' ? e.amount : -e.amount }
       let s = 0
       return arr.map(v => (s += v))
     }
@@ -117,31 +117,31 @@ export function ChartsView({ period, setPeriod, onPickCategory }: Props) {
           {donut(expCats, expTotal, 'expense')}
         </div>
         <div className="chart-card">
+          <h3>Income by category · <span className="inc">{money(incTotal)}</span></h3>
+          {donut(incCats, incTotal, 'income')}
+        </div>
+        <div className="chart-card">
           <h3>Income vs expenses</h3>
           <Bar
             data={{ labels: buckets.labels, datasets: [
               { label: 'Expenses', data: buckets.exp, backgroundColor: expC, borderRadius: 3, borderSkipped: false, maxBarThickness: 9 },
               { label: 'Income', data: buckets.inc, backgroundColor: incC, borderRadius: 3, borderSkipped: false, maxBarThickness: 9 },
             ] }}
-            options={{ responsive: true, plugins: { tooltip: { callbacks: { label: c => ` ${c.dataset.label}: ${money(c.parsed.y ?? 0)}` } } }, scales: { x: { ...axis, grid: { display: false } }, y: { ...axis, ticks: { ...axis.ticks, callback: v => money(Number(v)) } } } }}
+            options={{ responsive: true, plugins: { legend: { display: true, labels: { color: muted, boxWidth: 12, font: { size: 11 } } }, tooltip: { callbacks: { label: c => ` ${c.dataset.label}: ${money(c.parsed.y ?? 0)}` } } }, scales: { x: { ...axis, grid: { display: false } }, y: { ...axis, ticks: { ...axis.ticks, callback: v => money(Number(v)) } } } }}
           />
         </div>
         {period.kind !== 'day' && (
           <div className="chart-card">
-            <h3>Cumulative spend vs previous {period.kind === 'fy' ? 'FY' : period.kind}</h3>
+            <h3>Cashflow · running income − expenses</h3>
             <Line
               data={{ labels: cumulative.labels, datasets: [
                 { label: period.label, data: cumulative.cur, borderColor: accent, backgroundColor: accent + '22', fill: true, tension: .3, pointRadius: 0 },
                 { label: prev.label, data: cumulative.prev, borderColor: muted, borderDash: [4, 4], tension: .3, pointRadius: 0 },
               ] }}
-              options={{ responsive: true, interaction: { mode: 'index', intersect: false }, plugins: { tooltip: { callbacks: { label: c => ` ${c.dataset.label}: ${money(c.parsed.y ?? 0)}` } } }, scales: { x: { ...axis, grid: { display: false }, ticks: { ...axis.ticks, maxTicksLimit: 8 } }, y: { ...axis, ticks: { ...axis.ticks, callback: v => money(Number(v)) } } } }}
+              options={{ responsive: true, interaction: { mode: 'index', intersect: false }, plugins: { legend: { display: true, labels: { color: muted, boxWidth: 12, font: { size: 11 } } }, tooltip: { callbacks: { label: c => ` ${c.dataset.label}: ${money(c.parsed.y ?? 0, { sign: (c.parsed.y ?? 0) < 0 ? '-' : '' })}` } } }, scales: { x: { ...axis, grid: { display: false }, ticks: { ...axis.ticks, maxTicksLimit: 8 } }, y: { ...axis, ticks: { ...axis.ticks, callback: v => money(Number(v), { sign: Number(v) < 0 ? '-' : '' }) } } } }}
             />
           </div>
         )}
-        <div className="chart-card">
-          <h3>Income by category · <span className="inc">{money(incTotal)}</span></h3>
-          {donut(incCats, incTotal, 'income')}
-        </div>
       </div>
     </>
   )
