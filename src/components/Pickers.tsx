@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { COLOR_CHOICES, EMOJI_CHOICES } from '../lib/emoji'
 import { ICONS, ICON_NAMES } from '../lib/icons'
+import { contrastOn } from './CategoryIcon'
 
 export function EmojiPicker({ value, onChange }: { value: string; onChange: (e: string) => void }) {
   const [custom, setCustom] = useState('')
@@ -47,7 +48,7 @@ export function IconPicker({ value, color, onChange }: { value: string | null; c
           const I = ICONS[n]
           return (
             <button key={n} type="button" className={n === value ? 'active' : ''} onClick={() => onChange(n)} aria-label={n} title={n}
-              style={n === value ? { background: color + '33' } : undefined}>
+              style={n === value ? { background: color, color: contrastOn(color) } : undefined}>
               <I size={20} strokeWidth={2} />
             </button>
           )
