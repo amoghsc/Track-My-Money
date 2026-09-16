@@ -87,10 +87,13 @@ export function EntryForm({ entry, defaultDate, onClose }: Props) {
       </div>
       <div className="field amount-row">
         <button type="button" className="amount-cat" onClick={() => catRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })} aria-label="Category">
-          <CategoryIcon category={selectedCat} size={48} />
+          <CategoryIcon category={selectedCat} size={56} />
         </button>
-        <input ref={amountRef} className="amount-input" inputMode="decimal" autoFocus={!entry} placeholder="₹0" value={amount}
-          onChange={e => setAmount(e.target.value.replace(/[^\d.]/g, ''))} />
+        <div className="amount-wrap" onClick={() => amountRef.current?.focus()}>
+          <span className="rupee">₹</span>
+          <input id="amount" ref={amountRef} className="amount-input" inputMode="decimal" autoFocus={!entry} placeholder="0" value={amount}
+            style={{ width: `${Math.max(1, amount.length)}ch` }} onChange={e => setAmount(e.target.value.replace(/[^\d.]/g, ''))} />
+        </div>
       </div>
       <div className="field">
         <label>Description (optional)</label>
@@ -104,7 +107,7 @@ export function EntryForm({ entry, defaultDate, onClose }: Props) {
           ) : (
             <button type="button" className="iconbtn" onClick={() => fileRef.current?.click()} aria-label="Add photo"><CameraIcon /></button>
           )}
-          <input ref={fileRef} type="file" accept="image/*" capture="environment" hidden onChange={onFile} />
+          <input ref={fileRef} type="file" accept="image/*" hidden onChange={onFile} />
         </div>
       </div>
       <div className="field">
@@ -120,7 +123,7 @@ export function EntryForm({ entry, defaultDate, onClose }: Props) {
         <div className="cat-grid">
           {cats.map(c => (
             <button key={c.id} type="button" className={`cat-cell ${c.id === categoryId ? 'active' : ''}`} onClick={() => setCategoryId(c.id)}>
-              <CategoryIcon category={c} size={46} />
+              <CategoryIcon category={c} size={68} />
               <span className="n">{c.name}</span>
             </button>
           ))}

@@ -90,7 +90,7 @@ export function LogView({ period, setPeriod, filters, setFilters }: Props) {
             </div>
             <div className="chips">
               {categories.filter(c => filters.type === 'all' || c.type === filters.type).map(c => (
-                <button key={c.id} className={`chip ${filters.categoryId === c.id ? 'active' : ''}`} onClick={() => setFilters({ ...filters, categoryId: filters.categoryId === c.id ? null : c.id })}><CategoryIcon category={c} size={18} /> {c.name}</button>
+                <button key={c.id} className={`chip ${filters.categoryId === c.id ? 'active' : ''}`} onClick={() => setFilters({ ...filters, categoryId: filters.categoryId === c.id ? null : c.id })}><CategoryIcon category={c} size={24} /> {c.name}</button>
               ))}
             </div>
             {tags.length > 0 && <TagPicker single selected={filters.tagId ? [filters.tagId] : []} onChange={ids => setFilters({ ...filters, tagId: ids[0] ?? null })} />}
@@ -132,7 +132,7 @@ export function LogView({ period, setPeriod, filters, setFilters }: Props) {
                       const c = catMap.get(e.category_id ?? '')
                       return (
                         <button className="row" key={e.id} onClick={() => setEditing(e)}>
-                          <CategoryIcon category={c} />
+                          <CategoryIcon category={c} size={60} />
                           <span className="main">
                             <div className="title">{e.note || c?.name || 'Uncategorised'}</div>
                             <div className="sub">

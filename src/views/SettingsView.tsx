@@ -87,7 +87,7 @@ export function SettingsView() {
           </div>
           {cats.map((c, i) => (
             <div className="srow" key={c.id}>
-              <button onClick={() => setEditCat(c)}><CategoryIcon category={c} /></button>
+              <button onClick={() => setEditCat(c)}><CategoryIcon category={c} size={60} /></button>
               <button className="grow" style={{ textAlign: 'left' }} onClick={() => setEditCat(c)}>
                 <div>{c.name}</div><div className="small">{usage(c.id)} entries</div>
               </button>
@@ -223,7 +223,7 @@ function CategorySheet({ draft, onClose, onSave }: { draft: Partial<Category>; o
     <Sheet onClose={onClose}>
       <h2>{draft.id ? 'Edit category' : 'New category'}</h2>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
-        <CategoryIcon category={{ icon, emoji: draft.emoji ?? '📦', color }} size={56} />
+        <CategoryIcon category={{ icon, emoji: draft.emoji ?? '📦', color }} size={80} />
         <input placeholder="Category name" value={name} onChange={e => setName(e.target.value)} autoFocus={!draft.id} />
       </div>
       <div className="field"><label>Icon</label><IconPicker value={icon} color={color} onChange={setIcon} /></div>

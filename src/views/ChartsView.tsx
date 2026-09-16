@@ -95,7 +95,7 @@ export function ChartsView({ period, setPeriod, onPickCategory }: Props) {
           <div className="legend">
             {rows.map(r => (
               <button key={r.id} onClick={() => onPickCategory(r.id, type)}>
-                <CategoryIcon category={r.cat} size={30} />
+                <CategoryIcon category={r.cat} size={45} />
                 <span className="nm">{r.cat?.name ?? 'Uncategorised'}</span>
                 <span className="a">{money(r.amt)}</span>
                 <span className="p">{pct(r.amt, total)}</span>

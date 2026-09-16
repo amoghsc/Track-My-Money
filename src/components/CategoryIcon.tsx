@@ -4,7 +4,7 @@ import type { Category } from '../lib/types'
 
 interface Props {
   category?: Pick<Category, 'icon' | 'emoji' | 'color'> | null
-  size?: number // circle diameter; the icon is 2/3 of it (diameter = 1.5 × icon)
+  size?: number // circle diameter; the icon stays ~45% of it
   className?: string
 }
 
@@ -18,7 +18,7 @@ export function contrastOn(hex: string) {
 
 /** Solid colour circle with the category's Lucide icon (falls back to its emoji; dashed circle when there is no category). */
 export function CategoryIcon({ category, size = 40, className = '' }: Props) {
-  const iconSize = Math.round(size / 1.5)
+  const iconSize = Math.round(size * 0.45)
   if (!category) {
     return (
       <span className={`icon-tile none ${className}`} style={{ width: size, height: size, fontSize: iconSize }}>
