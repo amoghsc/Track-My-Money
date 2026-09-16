@@ -5,27 +5,26 @@
   --text: #0f172a;
   --muted: #64748b;
   --line: #e2e8f0;
-  --accent: #2563eb;
-  --expense: #dc2626;
-  --income: #16a34a;
-  --danger: #dc2626;
+  --accent: #3D75AB;
+  --expense: #F5534B;
+  --income: #18B272;
+  --danger: #F5534B;
   --radius: 14px;
   --nav-h: 60px;
-  color-scheme: light dark;
+  color-scheme: light;
 }
-@media (prefers-color-scheme: dark) {
-  :root {
+:root[data-theme="dark"] {
+  color-scheme: dark;
     --bg: #0b1220;
     --surface: #131c2e;
     --surface-2: #1b2640;
     --text: #e6ebf5;
     --muted: #8b98b3;
     --line: #23304a;
-    --accent: #60a5fa;
-    --expense: #f87171;
-    --income: #4ade80;
-    --danger: #f87171;
-  }
+    --accent: #47A7E6;
+    --expense: #F5534B;
+    --income: #18B272;
+    --danger: #F5534B;
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; background: var(--bg); color: var(--text); }
@@ -145,6 +144,7 @@ input[type="date"] { min-height: 42px; -webkit-appearance: none; appearance: non
 .btn.secondary { background: var(--surface-2); color: var(--text); }
 .btn.danger { background: transparent; color: var(--danger); }
 .btn.sm { padding: 8px 12px; width: auto; font-size: 13px; }
+.btn svg { width: 18px; height: 18px; }
 .btn-row { display: flex; gap: 10px; margin-top: 8px; }
 .photo-box { position: relative; }
 .photo-box img { width: 100%; max-height: 260px; object-fit: contain; border-radius: 12px; background: var(--surface-2); }
@@ -162,7 +162,7 @@ input[type="date"] { min-height: 42px; -webkit-appearance: none; appearance: non
 .icon-grid button { display: flex; align-items: center; justify-content: center; height: 38px; border-radius: 8px; color: var(--text); }
 .icon-grid button.active { box-shadow: 0 0 0 2px var(--accent); }
 .color-row { display: flex; flex-wrap: wrap; gap: 8px; }
-.color-row button { width: 30px; height: 30px; border-radius: 50%; border: 3px solid transparent; }
+.color-row button { width: 30px; height: 30px; border-radius: 50%; border: 3px solid transparent; box-shadow: inset 0 0 0 1px var(--line); }
 .color-row button.active { border-color: var(--text); }
 
 /* settings */

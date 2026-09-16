@@ -95,19 +95,8 @@ export function EntryForm({ entry, defaultDate, onClose }: Props) {
           onChange={e => setAmount(e.target.value.replace(/[^\d.]/g, ''))} />
       </div>
       <div className="field">
-        <label>Category</label>
-        <div className="cat-grid">
-          {cats.map(c => (
-            <button key={c.id} type="button" className={`cat-cell ${c.id === categoryId ? 'active' : ''}`} onClick={() => setCategoryId(c.id)}>
-              <CategoryIcon category={c} size={42} />
-              <span className="n">{c.name}</span>
-            </button>
-          ))}
-        </div>
-      </div>
-      <div className="field">
-        <label>Description</label>
-        <input placeholder="What was it?" value={note} onChange={e => setNote(e.target.value)} />
+        <label>Description (optional)</label>
+        <input placeholder="Optional" value={note} onChange={e => setNote(e.target.value)} />
       </div>
       <div className="field">
         <label>Date</label>
@@ -126,6 +115,17 @@ export function EntryForm({ entry, defaultDate, onClose }: Props) {
         <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
           <input placeholder="New tag" value={newTag} onChange={e => setNewTag(e.target.value)} onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addTagInline())} />
           <button type="button" className="btn secondary sm" onClick={addTagInline} disabled={!newTag.trim()}>Add</button>
+        </div>
+      </div>
+      <div className="field">
+        <label>Category</label>
+        <div className="cat-grid">
+          {cats.map(c => (
+            <button key={c.id} type="button" className={`cat-cell ${c.id === categoryId ? 'active' : ''}`} onClick={() => setCategoryId(c.id)}>
+              <CategoryIcon category={c} size={42} />
+              <span className="n">{c.name}</span>
+            </button>
+          ))}
         </div>
       </div>
       <div className="field">

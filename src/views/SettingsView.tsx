@@ -7,8 +7,6 @@ import { CategoryIcon } from '../components/CategoryIcon'
 import { DEFAULT_ICON } from '../lib/icons'
 import { COLOR_CHOICES } from '../lib/emoji'
 
-const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December']
-
 export function SettingsView() {
   const { member, session, categories, tags, entries, settings, setSettings, saveCategory, deleteCategory, reorderCategories, saveTag, deleteTag, importBackup, signOut, refresh } = useStore()
   const [catType, setCatType] = useState<EntryType>('expense')
@@ -97,10 +95,11 @@ export function SettingsView() {
         <div className="card">
           <h3>Preferences</h3>
           <div className="srow">
-            <div className="grow">Financial year starts in</div>
-            <select style={{ width: 'auto' }} value={settings.fyStartMonth} onChange={e => setSettings({ ...settings, fyStartMonth: Number(e.target.value) })}>
-              {MONTHS.map((m, i) => <option key={m} value={i}>{m}</option>)}
-            </select>
+            <div className="grow">Theme</div>
+            <div className="seg" style={{ width: 160 }}>
+              <button className={settings.theme === 'light' ? 'active' : ''} onClick={() => setSettings({ ...settings, theme: 'light' })}>Light</button>
+              <button className={settings.theme === 'dark' ? 'active' : ''} onClick={() => setSettings({ ...settings, theme: 'dark' })}>Dark</button>
+            </div>
           </div>
         </div>
 

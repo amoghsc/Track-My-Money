@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import type { Session } from '@supabase/supabase-js'
 import { PHOTO_BUCKET, supabase } from './supabase'
 import type { Category, Entry, EntryInput, Member, Tag } from './types'
-import { loadSettings, saveSettings, type Settings } from './settings'
+import { applyTheme, loadSettings, saveSettings, type Settings } from './settings'
 
 interface Store {
   session: Session | null
@@ -84,7 +84,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [settings, setSettingsState] = useState<Settings>(loadSettings)
   const urlCache = useRef(new Map<string, { url: string; exp: number }>())
 
-  const setSettings = useCallback((s: Settings) => { setSettingsState(s); saveSettings(s) }, [])
+  const setSettings = useCallback((s: Settings) => { setSettingsState(s); saveSettings(s); applyTheme(s.theme) }, [])
+  useEffect(() => { applyTheme(settings.theme) }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ---- auth ----
   useEffect(() => {

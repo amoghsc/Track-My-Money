@@ -12,7 +12,6 @@ export const EMOJI_CHOICES = [
 ]
 
 export const COLOR_CHOICES = [
-  '#ef4444','#f97316','#f59e0b','#eab308','#84cc16','#22c55e','#10b981','#14b8a6',
-  '#06b6d4','#0ea5e9','#3b82f6','#6366f1','#8b5cf6','#a855f7','#d946ef','#ec4899',
-  '#f43f5e','#78716c','#64748b','#9ca3af',
+  '#18B272', '#1EADCE', '#324C5B', '#3D75AB', '#47A7E6', '#5CC5AC', '#61708C',
+  '#BED940', '#E26BEB', '#E56274', '#F5534B', '#F963A0', '#FFA200', '#FFFFFF',
 ]
