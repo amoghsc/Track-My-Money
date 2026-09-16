@@ -5,10 +5,12 @@ import { Sheet } from '../components/Sheet'
 import { ColorPicker, IconPicker } from '../components/Pickers'
 import { CategoryIcon } from '../components/CategoryIcon'
 import { DEFAULT_ICON } from '../lib/icons'
+import { buildPreview, type ImportPreview } from '../lib/spendeeImport'
+import { money } from '../lib/format'
 import { COLOR_CHOICES } from '../lib/emoji'
 
 export function SettingsView() {
-  const { member, session, categories, tags, entries, settings, setSettings, saveCategory, deleteCategory, reorderCategories, saveTag, deleteTag, importBackup, signOut, refresh } = useStore()
+  const { member, session, categories, tags, entries, settings, setSettings, saveCategory, deleteCategory, reorderCategories, saveTag, deleteTag, importBackup, importSpendee, signOut, refresh } = useStore()
   const [catType, setCatType] = useState<EntryType>('expense')
   const [editCat, setEditCat] = useState<Partial<Category> | null>(null)
   const [editTag, setEditTag] = useState<Partial<Tag> | null>(null)
@@ -17,6 +19,10 @@ export function SettingsView() {
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
+  const spendeeRef = useRef<HTMLInputElement>(null)
+  const [preview, setPreview] = useState<ImportPreview | null>(null)
+  const [skipDup, setSkipDup] = useState(true)
+  const [progress, setProgress] = useState<number | null>(null)
 
   const cats = categories.filter(c => c.type === catType)
   const usage = (id: string) => entries.filter(e => e.category_id === id).length
@@ -37,6 +43,21 @@ export function SettingsView() {
   const askDelete = (c: Category) => {
     if (usage(c.id) === 0) { if (confirm(`Delete "${c.name}"?`)) run(() => deleteCategory(c.id, null)); return }
     setDeleting(c); setReassign(cats.find(x => x.id !== c.id)?.id ?? '')
+  }
+
+  const pickSpendee = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0]; e.target.value = ''
+    if (!f) return
+    setPreview(buildPreview(await f.text(), categories, tags, entries))
+  }
+  const runSpendee = async () => {
+    if (!preview) return
+    setProgress(0)
+    try {
+      const r = await importSpendee(preview.rows, skipDup, setProgress)
+      setMsg(`Imported ${r.inserted} entries${r.skipped ? `, skipped ${r.skipped} duplicates` : ''}`)
+      setPreview(null)
+    } catch (err) { setMsg('Error: ' + (err as Error).message) } finally { setProgress(null) }
   }
 
   const exportJson = () => {
@@ -104,6 +125,11 @@ export function SettingsView() {
         </div>
 
         <div className="card">
+          <h3>Import</h3>
+          <div className="srow"><div className="grow">Import from Spendee<div className="small">CSV exported from the Spendee app or web</div></div><button className="btn sm" disabled={busy} onClick={() => spendeeRef.current?.click()}>Choose CSV</button><input ref={spendeeRef} type="file" accept=".csv,text/csv" hidden onChange={pickSpendee} /></div>
+        </div>
+
+        <div className="card">
           <h3>Backup</h3>
           <div className="srow"><div className="grow">Download everything as JSON<div className="small">{entries.length} entries · photos not included</div></div><button className="btn secondary sm" onClick={exportJson}>Export</button></div>
           <div className="srow"><div className="grow">Restore from a JSON backup</div><button className="btn secondary sm" disabled={busy} onClick={() => fileRef.current?.click()}>Import</button><input ref={fileRef} type="file" accept="application/json" hidden onChange={importJson} /></div>
@@ -124,6 +150,50 @@ export function SettingsView() {
       {editTag && (
         <TagSheet draft={editTag} onClose={() => setEditTag(null)}
           onSave={t => run(() => saveTag(t)).then(() => setEditTag(null))} />
+      )}
+      {preview && (
+        <Sheet onClose={() => progress === null && setPreview(null)}>
+          <h2>Import from Spendee</h2>
+          {preview.rows.length === 0 ? (
+            <>
+              <p className="err">Nothing to import. {preview.skipped[0]?.reason}</p>
+              <p className="note">Found columns: {Object.keys(preview.columns).join(', ') || 'none'}. The file needs at least a Date and an Amount column.</p>
+            </>
+          ) : (
+            <>
+              <div className="summary" style={{ gridTemplateColumns: '1fr 1fr' }}>
+                <div className="cell" style={{ background: 'var(--surface-2)' }}><div className="k">Entries</div><div className="v">{preview.rows.length}</div></div>
+                <div className="cell" style={{ background: 'var(--surface-2)' }}><div className="k">Dates</div><div className="v" style={{ fontSize: 13 }}>{preview.range?.[0]} → {preview.range?.[1]}</div></div>
+                <div className="cell" style={{ background: 'var(--surface-2)' }}><div className="k">Expenses</div><div className="v exp">{money(preview.totals.expense)}</div></div>
+                <div className="cell" style={{ background: 'var(--surface-2)' }}><div className="k">Income</div><div className="v inc">{money(preview.totals.income)}</div></div>
+              </div>
+              {preview.newCategories.length > 0 && (
+                <div className="field"><label>New categories ({preview.newCategories.length})</label>
+                  <div className="chips" style={{ flexWrap: 'wrap' }}>{preview.newCategories.map(c => <span key={c.type + c.name} className="chip">{c.name}<span className="small" style={{ color: 'var(--muted)' }}>· {c.type}</span></span>)}</div>
+                  <p className="note" style={{ margin: '4px 0 0' }}>Created with a default icon — you can change them afterwards. Rows without a category go to "Other".</p>
+                </div>
+              )}
+              {preview.newTags.length > 0 && (
+                <div className="field"><label>New tags ({preview.newTags.length})</label><div className="chips" style={{ flexWrap: 'wrap' }}>{preview.newTags.map(t => <span key={t} className="chip">{t}</span>)}</div></div>
+              )}
+              {preview.skipped.length > 0 && (
+                <div className="field"><label>Skipped rows ({preview.skipped.length})</label>
+                  <div className="note">{preview.skipped.slice(0, 5).map(x => <div key={x.line}>Line {x.line}: {x.reason}</div>)}{preview.skipped.length > 5 && <div>…and {preview.skipped.length - 5} more</div>}</div>
+                </div>
+              )}
+              {preview.duplicates > 0 && (
+                <label className="note" style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 14 }}>
+                  <input type="checkbox" style={{ width: 'auto' }} checked={skipDup} onChange={e => setSkipDup(e.target.checked)} />
+                  Skip {preview.duplicates} entries that already exist (same date, amount and description)
+                </label>
+              )}
+              <div className="btn-row">
+                <button className="btn secondary" onClick={() => setPreview(null)} disabled={progress !== null}>Cancel</button>
+                <button className="btn" onClick={runSpendee} disabled={progress !== null}>{progress === null ? `Import ${skipDup ? preview.rows.length - preview.duplicates : preview.rows.length}` : `Importing… ${progress}`}</button>
+              </div>
+            </>
+          )}
+        </Sheet>
       )}
       {deleting && (
         <Sheet onClose={() => setDeleting(null)}>

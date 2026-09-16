@@ -3,6 +3,9 @@ import type { Session } from '@supabase/supabase-js'
 import { PHOTO_BUCKET, supabase } from './supabase'
 import type { Category, Entry, EntryInput, Member, Tag } from './types'
 import { applyTheme, loadSettings, saveSettings, type Settings } from './settings'
+import { dupKey, type ImportRow } from './spendeeImport'
+import { COLOR_CHOICES } from './emoji'
+import { DEFAULT_ICON } from './icons'
 
 interface Store {
   session: Session | null
@@ -30,6 +33,7 @@ interface Store {
   deleteTag: (id: string) => Promise<void>
   photoUrl: (path: string) => Promise<string>
   importBackup: (data: { categories?: Category[]; tags?: Tag[]; entries?: Entry[] }) => Promise<number>
+  importSpendee: (rows: ImportRow[], skipDuplicates: boolean, onProgress?: (done: number) => void) => Promise<{ inserted: number; skipped: number }>
   signOut: () => Promise<void>
 }
 
@@ -266,6 +270,44 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     return n
   }
 
+  const importSpendee: Store['importSpendee'] = async (rows, skipDuplicates, onProgress) => {
+    // 1. categories that don't exist yet (matched case-insensitively per type)
+    const catKey = (n: string, t: string) => `${t}|${n.trim().toLowerCase()}`
+    const catIds = new Map(categories.map(c => [catKey(c.name, c.type), c.id]))
+    const fallback = (t: string) => categories.find(c => c.type === t && c.name === 'Other')?.id ?? null
+    const newCats: Category[] = []
+    for (const r of rows) {
+      if (!r.category || catIds.has(catKey(r.category, r.type))) continue
+      const c: Category = { id: crypto.randomUUID(), name: r.category.trim(), type: r.type, emoji: '📦', icon: DEFAULT_ICON, color: COLOR_CHOICES[(categories.length + newCats.length) % 13], sort_order: 50 + newCats.length }
+      newCats.push(c); catIds.set(catKey(c.name, c.type), c.id)
+    }
+    if (newCats.length) { const { error } = await supabase.from('xp_categories').insert(newCats); if (error) throw error }
+    // 2. tags
+    const tagIds = new Map(tags.map(t => [t.name.toLowerCase(), t.id]))
+    const newTags: Tag[] = []
+    for (const name of new Set(rows.flatMap(r => r.tags))) {
+      if (tagIds.has(name.toLowerCase())) continue
+      const t: Tag = { id: crypto.randomUUID(), name, color: COLOR_CHOICES[(tags.length + newTags.length) % 13] }
+      newTags.push(t); tagIds.set(name.toLowerCase(), t.id)
+    }
+    if (newTags.length) { const { error } = await supabase.from('xp_tags').insert(newTags); if (error) throw error }
+    // 3. entries
+    const existing = new Set(entries.map(dupKey))
+    const toInsert = rows.filter(r => !(skipDuplicates && existing.has(dupKey(r)))).map(r => ({
+      id: crypto.randomUUID(), type: r.type, date: r.date, amount: r.amount,
+      category_id: r.category ? (catIds.get(catKey(r.category, r.type)) ?? fallback(r.type)) : fallback(r.type),
+      note: r.note, tag_ids: r.tags.map(t => tagIds.get(t.toLowerCase())!).filter(Boolean), photo_path: null,
+      author: r.author || member?.display_name || 'Spendee',
+    }))
+    for (let i = 0; i < toInsert.length; i += 200) {
+      const { error } = await supabase.from('xp_entries').insert(toInsert.slice(i, i + 200))
+      if (error) throw error
+      onProgress?.(Math.min(i + 200, toInsert.length))
+    }
+    await refresh()
+    return { inserted: toInsert.length, skipped: rows.length - toInsert.length }
+  }
+
   const signOut = async () => {
     await supabase.auth.signOut()
     try { localStorage.removeItem(CACHE_KEY) } catch { /* ignore */ }
@@ -278,7 +320,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const value: Store = {
     session, member, authLoading, recovery, setRecovery, loading, error, categories, tags, entries, catMap, tagMap,
     settings, setSettings, refresh, addEntry, updateEntry, deleteEntry, saveCategory, deleteCategory,
-    reorderCategories, saveTag, deleteTag, photoUrl, importBackup, signOut,
+    reorderCategories, saveTag, deleteTag, photoUrl, importBackup, importSpendee, signOut,
   }
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }
