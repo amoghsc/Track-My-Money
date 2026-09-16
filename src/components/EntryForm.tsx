@@ -5,6 +5,7 @@ import type { Entry, EntryType } from '../lib/types'
 import { today } from '../lib/periods'
 import { compressImage } from '../lib/image'
 import { CameraIcon } from './Icons'
+import { X } from 'lucide-react'
 import { PhotoThumb } from './PhotoThumb'
 import { CategoryIcon } from './CategoryIcon'
 import { TagPicker } from './TagPicker'
@@ -35,6 +36,8 @@ export function EntryForm({ entry, defaultDate, onClose }: Props) {
   useEffect(() => () => { if (photoPreview) URL.revokeObjectURL(photoPreview) }, [photoPreview])
 
   const cats = categories.filter(c => c.type === type)
+  const selectedCat = categories.find(c => c.id === categoryId) ?? null
+  const catRef = useRef<HTMLDivElement>(null)
   const switchType = (t: EntryType) => {
     setType(t)
     if (!categories.find(c => c.id === categoryId && c.type === t)) setCategoryId(null)
@@ -74,18 +77,35 @@ export function EntryForm({ entry, defaultDate, onClose }: Props) {
 
   return (
     <Sheet onClose={onClose}>
-      <h2>{entry ? 'Edit entry' : 'New entry'}</h2>
+      <div className="sheet-head">
+        <h2>{entry ? 'Edit entry' : 'New entry'}</h2>
+        <button type="button" className="iconbtn close" onClick={onClose} aria-label="Close"><X size={20} /></button>
+      </div>
       <div className="type-toggle">
         <button className={`exp ${type === 'expense' ? 'active' : ''}`} onClick={() => switchType('expense')}>Expense</button>
         <button className={`inc ${type === 'income' ? 'active' : ''}`} onClick={() => switchType('income')}>Income</button>
       </div>
-      <div className="field">
+      <div className="field amount-row">
+        <button type="button" className="amount-cat" onClick={() => catRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })} aria-label="Category">
+          <CategoryIcon category={selectedCat} size={48} />
+        </button>
         <input ref={amountRef} className="amount-input" inputMode="decimal" autoFocus={!entry} placeholder="₹0" value={amount}
           onChange={e => setAmount(e.target.value.replace(/[^\d.]/g, ''))} />
       </div>
       <div className="field">
         <label>Description (optional)</label>
-        <input placeholder="Optional" value={note} onChange={e => setNote(e.target.value)} />
+        <div className="desc-row">
+          <input placeholder="Optional" value={note} onChange={e => setNote(e.target.value)} />
+          {photoPreview || showExistingPhoto ? (
+            <button type="button" className="photo-thumb" onClick={() => { if (confirm('Remove photo?')) { setPhoto(null); if (photoPreview) URL.revokeObjectURL(photoPreview); setPhotoPreview(null) } }} aria-label="Remove photo">
+              {photoPreview ? <img src={photoPreview} alt="" /> : <PhotoThumb path={entry!.photo_path!} />}
+              <span className="rm">×</span>
+            </button>
+          ) : (
+            <button type="button" className="iconbtn" onClick={() => fileRef.current?.click()} aria-label="Add photo"><CameraIcon /></button>
+          )}
+          <input ref={fileRef} type="file" accept="image/*" capture="environment" hidden onChange={onFile} />
+        </div>
       </div>
       <div className="field">
         <label>Date</label>
@@ -95,7 +115,7 @@ export function EntryForm({ entry, defaultDate, onClose }: Props) {
         <label>Tags</label>
         <TagPicker selected={tagIds} onChange={setTagIds} />
       </div>
-      <div className="field">
+      <div className="field" ref={catRef}>
         <label>Category</label>
         <div className="cat-grid">
           {cats.map(c => (
@@ -106,20 +126,8 @@ export function EntryForm({ entry, defaultDate, onClose }: Props) {
           ))}
         </div>
       </div>
-      <div className="field">
-        <label>Photo / receipt</label>
-        {photoPreview || showExistingPhoto ? (
-          <div className="photo-box">
-            {photoPreview ? <img src={photoPreview} alt="" /> : <PhotoThumb path={entry!.photo_path!} />}
-            <button type="button" className="rm" onClick={() => { setPhoto(null); if (photoPreview) URL.revokeObjectURL(photoPreview); setPhotoPreview(null) }}>Remove</button>
-          </div>
-        ) : (
-          <button type="button" className="btn secondary" onClick={() => fileRef.current?.click()}><CameraIcon /> Add photo</button>
-        )}
-        <input ref={fileRef} type="file" accept="image/*" capture="environment" hidden onChange={onFile} />
-      </div>
       {err && <div className="err">{err}</div>}
-      <div className="btn-row">
+      <div className="btn-row sheet-footer">
         {entry && <button className="btn danger" onClick={remove} disabled={busy}>Delete</button>}
         <button className="btn" onClick={save} disabled={busy}>{busy ? 'Saving…' : entry ? 'Save changes' : 'Add'}</button>
       </div>

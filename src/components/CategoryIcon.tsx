@@ -1,9 +1,10 @@
+import { CircleDashed } from 'lucide-react'
 import { ICONS } from '../lib/icons'
 import type { Category } from '../lib/types'
 
 interface Props {
   category?: Pick<Category, 'icon' | 'emoji' | 'color'> | null
-  size?: number // tile size; icon is size/2
+  size?: number // circle diameter; the icon is 2/3 of it (diameter = 1.5 × icon)
   className?: string
 }
 
@@ -15,14 +16,21 @@ export function contrastOn(hex: string) {
   return lum > 0.72 ? '#0f172a' : '#ffffff'
 }
 
-/** Solid colour tile with the category's Lucide icon (falls back to its emoji, then a placeholder). */
+/** Solid colour circle with the category's Lucide icon (falls back to its emoji; dashed circle when there is no category). */
 export function CategoryIcon({ category, size = 40, className = '' }: Props) {
-  const color = category?.color ?? '#9ca3af'
-  const Icon = category?.icon ? ICONS[category.icon] : undefined
-  const iconSize = Math.round(size / 2)
+  const iconSize = Math.round(size / 1.5)
+  if (!category) {
+    return (
+      <span className={`icon-tile none ${className}`} style={{ width: size, height: size, fontSize: iconSize }}>
+        <CircleDashed size={iconSize} strokeWidth={1.75} />
+      </span>
+    )
+  }
+  const color = category.color
+  const Icon = category.icon ? ICONS[category.icon] : undefined
   return (
-    <span className={`icon-tile ${className}`} style={{ width: size, height: size, borderRadius: Math.round(size * 0.3), background: color, color: contrastOn(color), fontSize: iconSize }}>
-      {Icon ? <Icon size={iconSize} strokeWidth={2} /> : category?.emoji ?? '?'}
+    <span className={`icon-tile ${className}`} style={{ width: size, height: size, background: color, color: contrastOn(color), fontSize: iconSize }}>
+      {Icon ? <Icon size={iconSize} strokeWidth={2} /> : category.emoji}
     </span>
   )
 }

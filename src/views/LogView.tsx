@@ -137,7 +137,7 @@ export function LogView({ period, setPeriod, filters, setFilters }: Props) {
                             <div className="title">{e.note || c?.name || 'Uncategorised'}</div>
                             <div className="sub">
                               {e.note && c && <span>{c.name}</span>}
-                              {e.author && <span>· {e.author}</span>}
+                              {e.author && <span>{e.note && c ? '· ' : ''}{e.author}</span>}
                               {e.photo_path && <span className="photo-ic"><PhotoIcon /></span>}
                               {e.tag_ids.map(id => tagMap.get(id)).filter(Boolean).map(t => <span key={t!.id} className="tagpill" style={{ background: t!.color + '26', color: t!.color }}>{t!.name}</span>)}
                             </div>
